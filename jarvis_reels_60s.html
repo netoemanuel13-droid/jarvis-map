@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. — Reels 60s</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Rajdhani', sans-serif;
+            color: #00e5ff;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #graph-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+
+        #stars-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ===== NARRAÇÃO ESTILO REELS/STORIES ===== */
+        .narration {
+            position: fixed;
+            z-index: 15000;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .narration.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        .narration.hide {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+
+        /* FRAME 1 — Título gigante central */
+        .narr-title {
+            top: 8%;
+            left: 0; right: 0;
+            text-align: center;
+        }
+        .narr-title h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 52px;
+            font-weight: 900;
+            letter-spacing: 10px;
+            color: #fff;
+            text-shadow: 0 0 30px #00e5ff, 0 0 80px rgba(0,229,255,0.5), 0 4px 20px rgba(0,0,0,0.8);
+        }
+        .narr-title .subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            letter-spacing: 6px;
+            color: rgba(0,229,255,0.7);
+            margin-top: 8px;
+        }
+        .narr-title .line {
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+            margin: 12px auto;
+            box-shadow: 0 0 10px #00e5ff;
+        }
+
+        /* FRAMES 2,3,5 — Texto estilo Stories com fundo */
+        .narr-sub {
+            bottom: 10%;
+            left: 5%; right: 5%;
+            text-align: center;
+        }
+        .narr-sub .text-block {
+            display: inline-block;
+            background: rgba(0, 10, 25, 0.85);
+            border: 1px solid rgba(0,229,255,0.3);
+            border-radius: 16px;
+            padding: 18px 28px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 30px rgba(0,229,255,0.15), 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .narr-sub p {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: #fff;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .narr-sub .highlight {
+            color: #00e5ff;
+            font-weight: 700;
+            font-size: 30px;
+            text-shadow: 0 0 15px rgba(0,229,255,0.6);
+        }
+
+        /* FRAME 4 — Counter gigante */
+        .narr-stats {
+            top: 50%;
+            left: 0; right: 0;
+            text-align: center;
+            transform: translateY(-50%);
+        }
+        .narr-stats.show {
+            transform: translateY(-50%) scale(1);
+        }
+        .narr-stats .big-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 100px;
+            font-weight: 900;
+            color: #00e5ff;
+            text-shadow: 0 0 40px #00e5ff, 0 0 100px rgba(0,229,255,0.4), 0 4px 30px rgba(0,0,0,0.8);
+            line-height: 1;
+        }
+        .narr-stats .big-label {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+
+        /* FRAME 6 — CTA final */
+        .narr-cta {
+            top: 50%;
+            left: 0; right: 0;
+            text-align: center;
+            transform: translateY(-50%);
+        }
+        .narr-cta.show {
+            transform: translateY(-50%) scale(1);
+        }
+        .narr-cta .glow {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            text-shadow: 0 0 30px #00e5ff, 0 0 80px rgba(0,229,255,0.5);
+            display: block;
+            margin-bottom: 16px;
+        }
+        .narr-cta .powered {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            letter-spacing: 4px;
+            color: rgba(0,229,255,0.5);
+        }
+
+        /* Scanline */
+        .scanline {
+            position: fixed;
+            top: -120px; left: 0;
+            width: 100%; height: 120px;
+            z-index: 9999;
+            pointer-events: none;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,229,255,0.04) 40%, rgba(0,229,255,0.08) 50%, rgba(0,229,255,0.04) 60%, transparent 100%);
+            animation: scanMove 4s linear infinite;
+        }
+        @keyframes scanMove { 0%{top:-120px} 100%{top:100vh} }
+
+        .vignette {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 50;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.8) 100%);
+        }
+
+        /* Timer bar no topo */
+        .timer-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00e5ff, #aa55ff);
+            z-index: 10000;
+            width: 0%;
+            box-shadow: 0 0 10px #00e5ff;
+            transition: width 0.1s linear;
+        }
+
+        /* Play button overlay */
+        #play-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 20000;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            cursor: pointer;
+            transition: opacity 0.5s;
+        }
+        #play-overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .play-btn {
+            width: 80px; height: 80px;
+            border: 3px solid #00e5ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0,229,255,0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .play-btn::after {
+            content: '';
+            display: block;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 15px 0 15px 28px;
+            border-color: transparent transparent transparent #00e5ff;
+            margin-left: 5px;
+        }
+        .play-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 4px;
+            color: rgba(0,229,255,0.7);
+        }
+
+        /* Replay button overlay */
+        #replay-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 20000;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        #replay-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 20px rgba(0,229,255,0.4)} 50%{box-shadow:0 0 40px rgba(0,229,255,0.8)} }
+    </style>
+
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three-spritetext@1.6.5/dist/three-spritetext.min.js"></script>
+    <script src="https://unpkg.com/3d-force-graph@1.70.14/dist/3d-force-graph.min.js"></script>
+</head>
+<body>
+
+    <!-- Play overlay (precisa clicar pra tocar áudio) -->
+    <div id="play-overlay">
+        <div class="play-btn"></div>
+        <div class="play-label">TOQUE PARA INICIAR</div>
+    </div>
+
+    <!-- Replay overlay -->
+    <div id="replay-overlay" onclick="location.reload()">
+        <div class="play-btn" style="border-color: #aa55ff; box-shadow: 0 0 20px rgba(170,85,255,0.4);"></div>
+        <div class="play-label" style="color: #aa55ff;">REPETIR VÍDEO</div>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="timer-bar" id="timer-bar"></div>
+
+    <!-- Background -->
+    <canvas id="stars-canvas"></canvas>
+    <div class="scanline"></div>
+    <div class="vignette"></div>
+
+    <!-- ========== NARRAÇÃO ESTILO REELS ========== -->
+
+    <!-- Frame 1: 0-12s — Título grande -->
+    <div class="narration narr-title" id="narr1">
+        <h1>J.A.R.V.I.S.</h1>
+        <div class="line"></div>
+        <div class="subtitle">ARTIFICIAL INTELLIGENCE SYSTEM</div>
+    </div>
+
+    <!-- Frame 2: 8-22s — O que é -->
+    <div class="narration narr-sub" id="narr2">
+        <div class="text-block">
+            <p>Sistema de<br><span class="highlight">Inteligência Artificial</span><br>Unificado</p>
+        </div>
+    </div>
+
+    <!-- Frame 3: 18-34s — Tecnologias -->
+    <div class="narration narr-sub" id="narr3">
+        <div class="text-block">
+            <p>Automação inteligente com<br><span class="highlight">n8n × Claude × RAG</span></p>
+        </div>
+    </div>
+
+    <!-- Frame 4: 30-44s — Counter -->
+    <div class="narration narr-stats" id="narr4">
+        <div class="big-number" id="counter">0</div>
+        <div class="big-label">MÓDULOS CONECTADOS</div>
+    </div>
+
+    <!-- Frame 5: 40-54s — Lista de serviços -->
+    <div class="narration narr-sub" id="narr5">
+        <div class="text-block">
+            <p>Guardian • Graphify • Docker<br><span class="highlight">Tudo em um único mapa 3D</span></p>
+        </div>
+    </div>
+
+    <!-- Frame 6: 50-61s — CTA -->
+    <div class="narration narr-cta" id="narr6">
+        <span class="glow">O FUTURO É AGORA</span>
+        <div class="powered">POWERED BY J.A.R.V.I.S.</div>
+    </div>
+
+    <!-- Grafo -->
+    <div id="graph-container"></div>
+
+    <script>
+    // =====================
+    // CORES
+    // =====================
+    var COLORS = {
+        core:    '#00ffff',
+        service: '#4488ff',
+        trigger: '#ff6644',
+        ai:      '#aa55ff',
+        output:  '#44ff88'
+    };
+
+    // =====================
+    // ESTRELAS
+    // =====================
+    (function drawStars() {
+        var canvas = document.getElementById('stars-canvas');
+        var ctx = canvas.getContext('2d');
+        var stars = [];
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars = [];
+            for (var i = 0; i < 400; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 1.2 + 0.2,
+                    a: Math.random(),
+                    speed: Math.random() * 0.004 + 0.001
+                });
+            }
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i = 0; i < stars.length; i++) {
+                var s = stars[i];
+                s.a += s.speed;
+                var alpha = 0.3 + Math.abs(Math.sin(s.a)) * 0.5;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(180,220,255,' + (alpha * 0.35) + ')';
+                ctx.fill();
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+
+    // =====================
+    // DADOS DO GRAFO
+    // =====================
+    var graphData = {
+        nodes: [
+            { id: 'core', group: 'core', val: 60, name: 'J.A.R.V.I.S. CORE', desc: 'Núcleo central', fx: 0, fy: 0, fz: 0 },
+            { id: 'n8n_engine',    group: 'service', val: 30, name: 'n8n Engine',        desc: 'Automação' },
+            { id: 'guardian',      group: 'service', val: 22, name: 'Guardian',          desc: 'Monitoramento' },
+            { id: 'graphify',     group: 'service', val: 22, name: 'Graphify',          desc: 'Conhecimento' },
+            { id: 'python_bridge', group: 'service', val: 18, name: 'Python Bridge',    desc: 'Ponte' },
+            { id: 'docker',        group: 'service', val: 18, name: 'Docker',           desc: 'Container' },
+            { id: 'webhook',          group: 'trigger', val: 14, name: 'Webhook',          desc: 'HTTP' },
+            { id: 'schedule_trigger', group: 'trigger', val: 12, name: 'Schedule',         desc: 'Agendado' },
+            { id: 'chat_trigger',     group: 'trigger', val: 14, name: 'Chat Trigger',     desc: 'Mensagem' },
+            { id: 'claude_llm',    group: 'ai', val: 20, name: 'Claude Sonnet',   desc: 'LLM' },
+            { id: 'openrouter',    group: 'ai', val: 16, name: 'OpenRouter',      desc: 'Gateway' },
+            { id: 'vector_store',  group: 'ai', val: 16, name: 'Vector Store',    desc: 'RAG' },
+            { id: 'memory_buffer', group: 'ai', val: 14, name: 'Memory Buffer',   desc: 'Contexto' },
+            { id: 'telegram_bot', group: 'output', val: 15, name: 'Telegram Bot',  desc: 'Telegram' },
+            { id: 'http_request',  group: 'output', val: 12, name: 'HTTP Request',  desc: 'Externo' },
+            { id: 'file_system',   group: 'output', val: 12, name: 'File System',   desc: 'Local' },
+            { id: 'log_output',    group: 'output', val: 10, name: 'Log Output',    desc: 'Registro' }
+        ],
+        links: [
+            { source: 'core', target: 'n8n_engine' },
+            { source: 'core', target: 'guardian' },
+            { source: 'core', target: 'graphify' },
+            { source: 'core', target: 'python_bridge' },
+            { source: 'core', target: 'docker' },
+            { source: 'core', target: 'webhook' },
+            { source: 'core', target: 'schedule_trigger' },
+            { source: 'core', target: 'chat_trigger' },
+            { source: 'core', target: 'claude_llm' },
+            { source: 'core', target: 'openrouter' },
+            { source: 'core', target: 'vector_store' },
+            { source: 'core', target: 'memory_buffer' },
+            { source: 'core', target: 'telegram_bot' },
+            { source: 'core', target: 'http_request' },
+            { source: 'core', target: 'file_system' },
+            { source: 'core', target: 'log_output' },
+            { source: 'guardian',      target: 'n8n_engine' },
+            { source: 'guardian',      target: 'docker' },
+            { source: 'python_bridge', target: 'n8n_engine' },
+            { source: 'graphify',     target: 'vector_store' },
+            { source: 'n8n_engine',    target: 'webhook' },
+            { source: 'n8n_engine',    target: 'schedule_trigger' },
+            { source: 'n8n_engine',    target: 'chat_trigger' },
+            { source: 'webhook',       target: 'claude_llm' },
+            { source: 'chat_trigger',  target: 'claude_llm' },
+            { source: 'claude_llm',    target: 'openrouter' },
+            { source: 'claude_llm',    target: 'vector_store' },
+            { source: 'claude_llm',    target: 'memory_buffer' },
+            { source: 'claude_llm',    target: 'telegram_bot' },
+            { source: 'claude_llm',    target: 'http_request' },
+            { source: 'claude_llm',    target: 'file_system' },
+            { source: 'http_request',  target: 'log_output' },
+            { source: 'telegram_bot',  target: 'log_output' },
+            { source: 'file_system',   target: 'log_output' }
+        ]
+    };
+
+    // =====================
+    // GRAFO 3D
+    // =====================
+    var container = document.getElementById('graph-container');
+    var Graph;
+
+    try {
+        Graph = ForceGraph3D()(container)
+            .graphData(graphData)
+            .backgroundColor('rgba(0,0,0,0)')
+            .showNavInfo(false)
+            .nodeRelSize(4)
+            .nodeVal(function(n) { return n.val; })
+            .nodeColor(function(n) { return COLORS[n.group] || '#ffffff'; })
+            .nodeOpacity(0.9)
+            .d3AlphaDecay(0.01)
+            .d3VelocityDecay(0.3)
+            .linkColor(function(link) {
+                var src = (typeof link.source === 'object') ? link.source : graphData.nodes.find(function(n) { return n.id === link.source; });
+                if (src && src.id === 'core') return 'rgba(0,229,255,0.6)';
+                return src ? (COLORS[src.group] || 'rgba(0,229,255,0.5)') : 'rgba(0,229,255,0.5)';
+            })
+            .linkWidth(1.2)
+            .linkOpacity(0.7)
+            .linkDirectionalParticles(3)
+            .linkDirectionalParticleWidth(1.5)
+            .linkDirectionalParticleSpeed(0.004)
+            .linkDirectionalParticleColor(function(link) {
+                var src = (typeof link.source === 'object') ? link.source : graphData.nodes.find(function(n) { return n.id === link.source; });
+                return src ? COLORS[src.group] || '#00e5ff' : '#00e5ff';
+            })
+            .enableNodeDrag(false)
+            .enableNavigationControls(false);
+
+        // Labels
+        if (typeof SpriteText !== 'undefined') {
+            Graph.nodeThreeObjectExtend(true)
+                .nodeThreeObject(function(node) {
+                    var sprite = new SpriteText(node.name);
+                    sprite.color = COLORS[node.group] || '#00e5ff';
+                    sprite.textHeight = node.group === 'core' ? 8 : 5;
+                    sprite.fontWeight = 'bold';
+                    sprite.backgroundColor = 'rgba(0, 5, 15, 0.75)';
+                    sprite.padding = 4;
+                    sprite.borderRadius = 6;
+                    sprite.borderWidth = 0.5;
+                    sprite.borderColor = COLORS[node.group] || '#00e5ff';
+                    return sprite;
+                });
+        }
+
+        // Forças
+        Graph.d3Force('charge').strength(-300);
+        Graph.d3Force('link').distance(120);
+
+    } catch(e) {
+        console.error(e);
+    }
+
+    // =====================
+    // MÚSICA AMBIENTE (Web Audio API) - 60s
+    // =====================
+    var audioCtx;
+    function startMusic() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Drone grave
+        var drone = audioCtx.createOscillator();
+        drone.type = 'sine';
+        drone.frequency.setValueAtTime(55, audioCtx.currentTime);
+        var droneGain = audioCtx.createGain();
+        droneGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        droneGain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 3);
+        droneGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 58); // modificado para 60s
+        droneGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 60);
+        drone.connect(droneGain).connect(audioCtx.destination);
+        drone.start();
+        drone.stop(audioCtx.currentTime + 61);
+
+        // Drone harmônico
+        var drone2 = audioCtx.createOscillator();
+        drone2.type = 'sine';
+        drone2.frequency.setValueAtTime(82.5, audioCtx.currentTime);
+        var d2Gain = audioCtx.createGain();
+        d2Gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        d2Gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 4);
+        d2Gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 57);
+        d2Gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 60);
+        drone2.connect(d2Gain).connect(audioCtx.destination);
+        drone2.start();
+        drone2.stop(audioCtx.currentTime + 61);
+
+        // Pad atmosférico
+        var pad = audioCtx.createOscillator();
+        pad.type = 'triangle';
+        pad.frequency.setValueAtTime(220, audioCtx.currentTime);
+        pad.frequency.linearRampToValueAtTime(330, audioCtx.currentTime + 30);
+        pad.frequency.linearRampToValueAtTime(220, audioCtx.currentTime + 60);
+        var padGain = audioCtx.createGain();
+        padGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        padGain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 5);
+        padGain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 55);
+        padGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 60);
+        pad.connect(padGain).connect(audioCtx.destination);
+        pad.start();
+        pad.stop(audioCtx.currentTime + 61);
+
+        // Shimmer (brilho agudo sutil)
+        var shimmer = audioCtx.createOscillator();
+        shimmer.type = 'sine';
+        shimmer.frequency.setValueAtTime(880, audioCtx.currentTime);
+        shimmer.frequency.linearRampToValueAtTime(1100, audioCtx.currentTime + 60);
+        var shimGain = audioCtx.createGain();
+        shimGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        shimGain.gain.linearRampToValueAtTime(0.015, audioCtx.currentTime + 8);
+        shimGain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 55);
+        shimGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 60);
+        shimmer.connect(shimGain).connect(audioCtx.destination);
+        shimmer.start();
+        shimmer.stop(audioCtx.currentTime + 61);
+
+        // Pulsos rítmicos sutis (durante os 60s)
+        for (var i = 0; i < 30; i++) {
+            var blip = audioCtx.createOscillator();
+            blip.type = 'sine';
+            blip.frequency.setValueAtTime(440 + Math.random() * 200, audioCtx.currentTime + i * 2);
+            var blipGain = audioCtx.createGain();
+            blipGain.gain.setValueAtTime(0, audioCtx.currentTime + i * 2);
+            blipGain.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + i * 2 + 0.05);
+            blipGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + i * 2 + 0.4);
+            blip.connect(blipGain).connect(audioCtx.destination);
+            blip.start(audioCtx.currentTime + i * 2);
+            blip.stop(audioCtx.currentTime + i * 2 + 0.5);
+        }
+    }
+
+    // =====================
+    // TIMELINE DE NARRAÇÃO (60s)
+    // =====================
+    var timeline = [
+        { id: 'narr1', showAt: 0,    hideAt: 12 },
+        { id: 'narr2', showAt: 8,    hideAt: 22 },
+        { id: 'narr3', showAt: 18,   hideAt: 34 },
+        { id: 'narr4', showAt: 30,   hideAt: 44 },
+        { id: 'narr5', showAt: 40,   hideAt: 54 },
+        { id: 'narr6', showAt: 50,   hideAt: 61 },
+    ];
+
+    function startTimeline() {
+        var startTime = Date.now();
+        var totalDuration = 60000; // 60s em ms
+
+        // Counter animação para narr4
+        var counterDone = false;
+
+        function tick() {
+            var elapsed = (Date.now() - startTime) / 1000;
+            var progress = Math.min(elapsed / 60, 1);
+
+            // Timer bar
+            document.getElementById('timer-bar').style.width = (progress * 100) + '%';
+
+            // Mostrar/esconder frames
+            timeline.forEach(function(t) {
+                var el = document.getElementById(t.id);
+                if (elapsed >= t.showAt && elapsed < t.hideAt) {
+                    el.classList.add('show');
+                    el.classList.remove('hide');
+                } else {
+                    el.classList.remove('show');
+                    el.classList.add('hide');
+                }
+            });
+
+            // Counter animação
+            if (elapsed >= 30 && elapsed < 44 && !counterDone) {
+                var counterEl = document.getElementById('counter');
+                var counterProgress = Math.min((elapsed - 30) / 4, 1);
+                counterEl.textContent = Math.floor(counterProgress * 17);
+                if (counterProgress >= 1) counterDone = true;
+            }
+
+            if (elapsed < 61) {
+                requestAnimationFrame(tick);
+            } else {
+                document.getElementById('replay-overlay').classList.add('show');
+            }
+        }
+        tick();
+    }
+
+    // Rotação da câmera (mais cinematográfica para o story)
+    function startCameraRotation() {
+        var camAngle = 0;
+        var startTime = Date.now();
+
+        (function rotate() {
+            var elapsed = (Date.now() - startTime) / 1000;
+            camAngle += 0.003;
+            var dist = 280 + Math.sin(elapsed * 0.2) * 40;
+            var height = 20 + Math.sin(elapsed * 0.3) * 40;
+
+            if (Graph) {
+                Graph.cameraPosition({
+                    x: dist * Math.sin(camAngle),
+                    z: dist * Math.cos(camAngle),
+                    y: height
+                });
+            }
+            requestAnimationFrame(rotate);
+        })();
+    }
+
+    // =====================
+    // PLAY — inicia tudo ao clicar
+    // =====================
+    document.getElementById('play-overlay').addEventListener('click', function() {
+        this.classList.add('hide');
+        startMusic();
+        startTimeline();
+        startCameraRotation();
+    });
+    </script>
+</body>
+</html>
