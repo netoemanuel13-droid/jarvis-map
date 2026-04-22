@@ -344,12 +344,18 @@
             { id: 'chat_trigger',     group: 'trigger', val: 14, name: 'Chat Trigger',     desc: 'Inicia por mensagem' },
 
             // IA / LLM
+            { id: 'claude_code',   group: 'ai', val: 28, name: 'Claude Code',     desc: 'Engenharia e Automação' },
             { id: 'claude_llm',    group: 'ai', val: 20, name: 'Claude Sonnet',   desc: 'LLM principal' },
             { id: 'openrouter',    group: 'ai', val: 16, name: 'OpenRouter API',  desc: 'Gateway multi-modelo' },
             { id: 'vector_store',  group: 'ai', val: 16, name: 'Vector Store',    desc: 'Embeddings / RAG' },
             { id: 'memory_buffer', group: 'ai', val: 14, name: 'Memory Buffer',   desc: 'Contexto de conversa' },
+            { id: 'meta_ads',      group: 'ai', val: 18, name: 'Meta Ads Agent',  desc: 'Gerador de Campanhas' },
+            { id: 'insta_qa',      group: 'ai', val: 18, name: 'Instagram QA',    desc: 'Conteúdo Diário' },
+            { id: 'ebook',         group: 'ai', val: 16, name: 'E-Book Gen',      desc: 'Copy de Vendas' },
 
             // OUTPUTS
+            { id: 'omnichat',    group: 'service', val: 18, name: 'OmniChat Elite', desc: 'Gestão de DMs' },
+            { id: 'health_vps',  group: 'service', val: 16, name: 'Health Monitor', desc: 'VPS Status' },
             { id: 'telegram_bot', group: 'output', val: 15, name: 'Telegram Bot',  desc: 'Canal de saída Telegram' },
             { id: 'http_request',  group: 'output', val: 12, name: 'HTTP Request',  desc: 'Chamadas externas' },
             { id: 'file_system',   group: 'output', val: 12, name: 'File System',   desc: 'Leitura/escrita local' },
@@ -366,6 +372,7 @@
             { source: 'core', target: 'schedule_trigger' },
             { source: 'core', target: 'chat_trigger' },
             { source: 'core', target: 'claude_llm' },
+            { source: 'core', target: 'claude_code' },
             { source: 'core', target: 'openrouter' },
             { source: 'core', target: 'vector_store' },
             { source: 'core', target: 'memory_buffer' },
@@ -373,6 +380,11 @@
             { source: 'core', target: 'http_request' },
             { source: 'core', target: 'file_system' },
             { source: 'core', target: 'log_output' },
+            { source: 'core', target: 'meta_ads' },
+            { source: 'core', target: 'insta_qa' },
+            { source: 'core', target: 'omnichat' },
+            { source: 'core', target: 'ebook' },
+            { source: 'core', target: 'health_vps' },
 
             // Conexões secundárias entre serviços
             { source: 'guardian',      target: 'n8n_engine' },
@@ -382,6 +394,11 @@
             { source: 'n8n_engine',    target: 'webhook' },
             { source: 'n8n_engine',    target: 'schedule_trigger' },
             { source: 'n8n_engine',    target: 'chat_trigger' },
+            { source: 'n8n_engine',    target: 'meta_ads' },
+            { source: 'n8n_engine',    target: 'insta_qa' },
+            { source: 'n8n_engine',    target: 'omnichat' },
+            { source: 'n8n_engine',    target: 'ebook' },
+            { source: 'n8n_engine',    target: 'health_vps' },
             { source: 'webhook',       target: 'claude_llm' },
             { source: 'chat_trigger',  target: 'claude_llm' },
             { source: 'claude_llm',    target: 'openrouter' },
@@ -390,9 +407,12 @@
             { source: 'claude_llm',    target: 'telegram_bot' },
             { source: 'claude_llm',    target: 'http_request' },
             { source: 'claude_llm',    target: 'file_system' },
+            { source: 'claude_code',   target: 'docker' },
+            { source: 'claude_code',   target: 'file_system' },
             { source: 'http_request',  target: 'log_output' },
             { source: 'telegram_bot',  target: 'log_output' },
             { source: 'file_system',   target: 'log_output' }
+        ]stem',   target: 'log_output' }
         ]
     };
 
