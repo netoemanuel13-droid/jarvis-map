@@ -3,551 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J.A.R.V.I.S. — Mapa 3D Unificado</title>
+    <title>J.A.R.V.I.S. — Mapa Unificado 3D</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            overflow: hidden;
-            background: #000;
-            font-family: 'Rajdhani', sans-serif;
-            color: #00e5ff;
-        }
+        body { overflow: hidden; background: #000; font-family: 'Rajdhani', sans-serif; color: #00e5ff; }
+        #graph-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #stars-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        
+        .hud-top-left { position: fixed; top: 24px; left: 28px; z-index: 100; pointer-events: none; }
+        .hud-title { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; letter-spacing: 6px; color: #00e5ff; text-shadow: 0 0 12px rgba(0,229,255,0.8); }
+        .hud-sub { font-size: 11px; letter-spacing: 2px; color: rgba(0,229,255,0.4); text-transform: uppercase; }
+        
+        .hud-stats { position: fixed; bottom: 28px; left: 28px; z-index: 100; font-size: 12px; color: rgba(0,229,255,0.4); }
+        .stat-value { color: #00e5ff; font-weight: 700; }
 
-        #graph-container {
-            width: 100vw;
-            height: 100vh;
-            position: absolute;
-            top: 0; left: 0;
-            z-index: 1;
-        }
+        .hud-legend { position: fixed; top: 28px; right: 28px; z-index: 100; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,0.4); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0.8; }
 
-        #stars-canvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .hud-top-left {
-            position: fixed;
-            top: 24px; left: 28px;
-            z-index: 100;
-            pointer-events: none;
-        }
-        .hud-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 26px;
-            font-weight: 900;
-            letter-spacing: 6px;
-            color: #00e5ff;
-            text-shadow: 0 0 12px rgba(0,229,255,0.8), 0 0 40px rgba(0,229,255,0.3);
-            margin-bottom: 4px;
-        }
-        .hud-sub {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 13px;
-            font-weight: 300;
-            letter-spacing: 3px;
-            color: rgba(0,229,255,0.5);
-            text-transform: uppercase;
-        }
-
-        .hud-stats {
-            position: fixed;
-            bottom: 28px; left: 28px;
-            z-index: 100;
-            pointer-events: none;
-            font-size: 12px;
-            letter-spacing: 1px;
-            color: rgba(0,229,255,0.4);
-        }
-        .stat-value {
-            color: #00e5ff;
-            font-weight: 700;
-            font-size: 14px;
-            text-shadow: 0 0 8px rgba(0,229,255,0.5);
-        }
-
-        .hud-legend {
-            position: fixed;
-            top: 28px; right: 28px;
-            z-index: 100;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11px;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.5);
-        }
-        .legend-dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .node-info {
-            position: fixed;
-            bottom: 28px; right: 28px;
-            z-index: 100;
-            pointer-events: none;
-            background: rgba(0,10,25,0.85);
-            border: 1px solid rgba(0,229,255,0.15);
-            border-radius: 12px;
-            padding: 16px 22px;
-            min-width: 220px;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        .node-info.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .node-info-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 2px;
-            margin-bottom: 6px;
-        }
-        .node-info-type {
-            font-size: 11px;
-            color: rgba(0,229,255,0.6);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .node-info-connections {
-            margin-top: 8px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.4);
-        }
-        .node-info-connections span {
-            color: #00e5ff;
-            font-weight: 700;
-        }
-
-        .scanline {
-            position: fixed;
-            top: -120px; left: 0;
-            width: 100%; height: 120px;
-            z-index: 9999;
-            pointer-events: none;
-            background: linear-gradient(180deg, transparent 0%, rgba(0,229,255,0.03) 40%, rgba(0,229,255,0.06) 50%, rgba(0,229,255,0.03) 60%, transparent 100%);
-            animation: scanMove 6s linear infinite;
-        }
-        @keyframes scanMove {
-            0% { top: -120px; }
-            100% { top: 100vh; }
-        }
-
-        .vignette {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 50;
-            pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.7) 100%);
-        }
-
-        /* Tela de carregamento */
-        #loading {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 10000;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 16px;
-            transition: opacity 0.8s;
-        }
-        #loading.hide { opacity: 0; pointer-events: none; }
-        .loading-text {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            color: #00e5ff;
-            letter-spacing: 4px;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        .loading-bar {
-            width: 200px; height: 2px;
-            background: rgba(0,229,255,0.15);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .loading-bar-fill {
-            width: 0%; height: 100%;
-            background: #00e5ff;
-            animation: loadBar 2s ease-in-out forwards;
-            box-shadow: 0 0 10px #00e5ff;
-        }
-        @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        @keyframes loadBar { 0%{width:0%} 100%{width:100%} }
-
-        #error-log {
-            position: fixed;
-            bottom: 80px; left: 28px;
-            z-index: 200;
-            font-size: 11px;
-            color: #ff4444;
-            max-width: 400px;
-            display: none;
-        }
+        .vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; pointer-events: none; background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%); }
     </style>
-
-    <!-- Three.js (versão compatível) -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-    <!-- SpriteText para labels 3D -->
     <script src="https://unpkg.com/three-spritetext@1.6.5/dist/three-spritetext.min.js"></script>
-    <!-- 3D Force Graph -->
     <script src="https://unpkg.com/3d-force-graph@1.70.14/dist/3d-force-graph.min.js"></script>
 </head>
 <body>
-
-    <!-- Loading -->
-    <div id="loading">
-        <div class="loading-text">INICIALIZANDO JARVIS</div>
-        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-    </div>
-
-    <!-- Estrelas -->
+    <div id="graph-container"></div>
     <canvas id="stars-canvas"></canvas>
-
-    <!-- Overlay -->
-    <div class="scanline"></div>
     <div class="vignette"></div>
 
-    <!-- HUD -->
     <div class="hud-top-left">
         <div class="hud-title">J.A.R.V.I.S.</div>
-        <div class="hud-sub">Mapa Unificado 3D ─ n8n × Core × Serviços</div>
+        <div class="hud-sub">Mapa Unificado 3D — n8n & Core</div>
     </div>
 
-    <!-- Legenda -->
     <div class="hud-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#00ffff;box-shadow:0 0 6px #00ffff"></div> CORE</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#4488ff;box-shadow:0 0 6px #4488ff"></div> SERVIÇO</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ff6644;box-shadow:0 0 6px #ff6644"></div> TRIGGER</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#aa55ff;box-shadow:0 0 6px #aa55ff"></div> IA / LLM</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#44ff88;box-shadow:0 0 6px #44ff88"></div> OUTPUT</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00ffff;"></div> CORE</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#aa55ff;"></div> AI</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4488ff;"></div> SERVICE</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff6644;"></div> TRIGGER</div>
     </div>
 
-    <!-- Stats -->
-    <div class="hud-stats">
-        NODES: <span class="stat-value" id="stat-nodes">0</span> &nbsp;│&nbsp;
-        LINKS: <span class="stat-value" id="stat-links">0</span> &nbsp;│&nbsp;
-        STATUS: <span class="stat-value" style="color:#44ff88">ONLINE</span>
-    </div>
-
-    <!-- Tooltip -->
-    <div class="node-info" id="node-info">
-        <div class="node-info-name" id="ni-name">—</div>
-        <div class="node-info-type" id="ni-type">—</div>
-        <div class="node-info-connections" id="ni-conn">Conexões: <span>0</span></div>
-    </div>
-
-    <!-- Erros -->
-    <div id="error-log"></div>
-
-    <!-- Container do Grafo -->
-    <div id="graph-container"></div>
+    <div class="hud-stats">NODES: <span class="stat-value" id="node-count">0</span> | V.SYNC: <span class="stat-value">ENABLED</span></div>
 
     <script>
-    // =====================
-    // LOG DE ERROS VISÍVEL
-    // =====================
-    function showError(msg) {
-        var el = document.getElementById('error-log');
-        el.style.display = 'block';
-        el.textContent = 'ERRO: ' + msg;
-        console.error('[JARVIS]', msg);
-    }
+    // ESTRELAS
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; stars = []; for(let i=0; i<300; i++) stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*1, a:Math.random()}); }
+    resize(); window.addEventListener('resize', resize);
+    function draw() { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="rgba(0,180,255,0.2)"; stars.forEach(s=>{s.a+=0.01; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*(1+Math.sin(s.a)*0.2),0,Math.PI*2); ctx.fill();}); requestAnimationFrame(draw); }
+    draw();
 
-    // =====================
-    // ESTRELAS DE FUNDO
-    // =====================
-    (function drawStars() {
-        var canvas = document.getElementById('stars-canvas');
-        var ctx = canvas.getContext('2d');
-        var stars = [];
+    const COLORS = { core: '#00ffff', ai: '#aa55ff', service: '#4488ff', trigger: '#ff6644', output: '#44ff88' };
+    const claudeLogo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAFJUlEQVR4nO3dy2tcVRTH8fOdmSTTNJm0SdumaZukSduYtlIDFRT8YV0IuNClVvArunAnuHHhTnHhwp3gwoU7wYUL/4AuFERR8YdaU6u0SdumaZumaZpm7pt7nIu7mGvS98y99+re7weGlpAsZ3LOvfece4IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKAdpM6Z87X6UFXL3vYre5mrfm0vs8/YAnuK3WRL3S87YmXvlE3YfXar3WF/7M2S93v8Y7ZkVvYhT9iS/UAmvE0msyvWk6zYid0z7v3Z56877v7c9+Mec8zL7rInXN/fO8z5vWvM8X+9z5Zf37vMPXUvmP/o73vKnP/3f6/uS9pD5p+7N/Z9zzP5sR+zUtsTeePdzP3mN9f6vYf/sS+79nOfuz+7Nff6f9f3Xf0naS+Zf7n7uZ/vMe+p639N6x9P6hZPmD9uTvW9J+6ve07y3Z9v/+3pX86X/9fW9fD9pX8v7mXvbPfdl/S9qD9vP77unfv+f7z38n7Wf3rO/7Y9X37+m6Wv78/unf36l60P76/uq+P3F9/+69Vv78/ulft8v60P30XuvvdfUfPHeqHvT+uj/V9/dfP9fXl/mX++v73vif6v/p7+7pA9C+9v2D9vUvI9N/rPvv+r6v8uP7u96+T60f9mZun7Unf9+S9pO/Z31vyfIH7cnf996xvP28P9pX/px79vf7Uf9Of07/f/05/fn9/6Y/f//+9P/nz+/v35//v79/f/mD9vTvX9K+f3//9M/7v9eP6v8P2p8/Pz9/f/78/f3nP9f3l/mXPz8/f3/+/P3nD9rXv4xM/7Huv9OPrP9OPrL+O/3I+u/0I+u/04+s/04/sv47/cj67/Qj67/Tj6z/Tj+y/jv9yPrv9CPrv9OPrP9OPrL+O/3I+u/0I+u/04+s/04/sv47/cj67/Qj67/Tj6z/Tj+y/jv9yPrv9OPrP9OPrL+O/3I+u/0I+u/04+s/04/sh/17/Tv9PfbP7X/Tz9y/+f0I+fP6f83/V9ZfwC03/u/XN8/9edO/3P+D9L/1f6P7P+u/v8D9f+j/n8B9f9D/T8P+l8e9L886H950P/yoP/lQf/Lg/6XB/0vD/pfHvS/POh/edD/8qD/5UH/y4P+lwf9Lw/6Xx70vzzof3nQ//Kg/+VB/8uD/pcH/S8P+l8e9L886H950P/yoP/lQf/Lg/6XB/0vD/pfHvS/POh/edD/8qD/5UH/y4P+lwf9Lw/6Xx70vzzof3nQ//Kg/+VB/8uD/pcH/S8P+l8e9L886H950P/yoP/lQf/LR/aZ/Wj/rB7ZrvZPy96u9U/TPvV/fG2vlL1S65+qfVLpX6f1S9L+6G+e9vXvV9K+79/6XlX9U7Wf9vWnf/vekt+f/u37S35/UvVP++r6q/qX1f+3vdfS97e979b908YAtJ/9d/p77Xv32vfulf699r17fW9f9+/rv9e+p79Nf5v+Nn279LeP7e3v8T6x9P0AAAAAAAAAAAAAAAD+A6sRov7jGf6tAAAAAElFTkSuQmCC';
 
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            stars = [];
-            for (var i = 0; i < 500; i++) {
-                stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    r: Math.random() * 1.2 + 0.2,
-                    a: Math.random(),
-                    speed: Math.random() * 0.003 + 0.001
-                });
-            }
-        }
-        resize();
-        window.addEventListener('resize', resize);
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (var i = 0; i < stars.length; i++) {
-                var s = stars[i];
-                s.a += s.speed;
-                var alpha = 0.3 + Math.abs(Math.sin(s.a)) * 0.5;
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(180,220,255,' + (alpha * 0.35) + ')';
-                ctx.fill();
-            }
-            requestAnimationFrame(animate);
-        }
-        animate();
-    })();
-
-    // ============================
-    // DADOS DO MAPA UNIFICADO
-    // ============================
-    var COLORS = {
-        core:    '#00ffff',
-        service: '#4488ff',
-        trigger: '#ff6644',
-        ai:      '#aa55ff',
-        output:  '#44ff88'
-    };
-
-    var graphData = {
+    const graphData = {
         nodes: [
-            // CORE — fixo no centro
-            { id: 'core', group: 'core', val: 60, name: 'J.A.R.V.I.S. CORE', desc: 'Núcleo central do sistema', fx: 0, fy: 0, fz: 0 },
-
-            // SERVIÇOS
-            { id: 'n8n_engine',    group: 'service', val: 30, name: 'n8n Engine',        desc: 'Motor de automação' },
-            { id: 'guardian',      group: 'service', val: 22, name: 'Guardian',          desc: 'Monitoramento e saúde' },
-            { id: 'graphify',     group: 'service', val: 22, name: 'Graphify',          desc: 'Grafo de conhecimento' },
-            { id: 'python_bridge', group: 'service', val: 18, name: 'Python Bridge',    desc: 'Ponte Python ↔ n8n' },
-            { id: 'docker',        group: 'service', val: 18, name: 'Docker Container', desc: 'Runtime de containers' },
-
-            // TRIGGERS
-            { id: 'webhook',          group: 'trigger', val: 14, name: 'Webhook',          desc: 'Recebe requisições HTTP' },
-            { id: 'schedule_trigger', group: 'trigger', val: 12, name: 'Schedule Trigger', desc: 'Execução agendada' },
-            { id: 'chat_trigger',     group: 'trigger', val: 14, name: 'Chat Trigger',     desc: 'Inicia por mensagem' },
-
-            // IA / LLM
-            { id: 'claude_code',   group: 'ai', val: 28, name: 'Claude Code',     desc: 'Engenharia e Automação' },
-            { id: 'claude_llm',    group: 'ai', val: 20, name: 'Claude Sonnet',   desc: 'LLM principal' },
-            { id: 'openrouter',    group: 'ai', val: 16, name: 'OpenRouter API',  desc: 'Gateway multi-modelo' },
-            { id: 'vector_store',  group: 'ai', val: 16, name: 'Vector Store',    desc: 'Embeddings / RAG' },
-            { id: 'memory_buffer', group: 'ai', val: 14, name: 'Memory Buffer',   desc: 'Contexto de conversa' },
-            { id: 'meta_ads',      group: 'ai', val: 18, name: 'Meta Ads Agent',  desc: 'Gerador de Campanhas' },
-            { id: 'insta_qa',      group: 'ai', val: 18, name: 'Instagram QA',    desc: 'Conteúdo Diário' },
-            { id: 'ebook',         group: 'ai', val: 16, name: 'E-Book Gen',      desc: 'Copy de Vendas' },
-
-            // OUTPUTS
-            { id: 'omnichat',    group: 'service', val: 18, name: 'OmniChat Elite', desc: 'Gestão de DMs' },
-            { id: 'health_vps',  group: 'service', val: 16, name: 'Health Monitor', desc: 'VPS Status' },
-            { id: 'telegram_bot', group: 'output', val: 15, name: 'Telegram Bot',  desc: 'Canal de saída Telegram' },
-            { id: 'http_request',  group: 'output', val: 12, name: 'HTTP Request',  desc: 'Chamadas externas' },
-            { id: 'file_system',   group: 'output', val: 12, name: 'File System',   desc: 'Leitura/escrita local' },
-            { id: 'log_output',    group: 'output', val: 10, name: 'Log Output',    desc: 'Registro de operações' }
+            { id: 'core', name: 'J.A.R.V.I.S. CORE', group: 'core', val: 55 },
+            { id: 'claude_code', name: 'CLAUDE CODE', group: 'ai', val: 32 },
+            { id: 'claude_sonnet', name: 'CLAUDE SONNET', group: 'ai', val: 28 },
+            { id: 'master', name: 'JARVIS MASTER', group: 'ai', val: 30 },
+            { id: 'n8n', name: 'n8n ENGINE', group: 'service', val: 30 },
+            { id: 'meta', name: 'META ADS AGENT', group: 'ai', val: 18 },
+            { id: 'ebook', name: 'E-BOOK GEN', group: 'ai', val: 18 },
+            { id: 'insta', name: 'INSTA QA AGENT', group: 'ai', val: 18 },
+            { id: 'omni', name: 'OMNICHAT ELITE', group: 'service', val: 18 },
+            { id: 'health', name: 'HEALTH MONITOR', group: 'service', val: 18 },
+            { id: 'bridge', name: 'PYTHON BRIDGE', group: 'service', val: 20 },
+            { id: 'docker', name: 'DOCKER CONTAINER', group: 'service', val: 20 },
+            { id: 'guardian', name: 'GUARDIAN', group: 'service', val: 18 },
+            { id: 'webhook', name: 'WEBHOOK', group: 'trigger', val: 16 },
+            { id: 'schedule', name: 'SCHEDULE TRIGGER', group: 'trigger', val: 16 },
+            { id: 'file', name: 'FILE SYSTEM', group: 'output', val: 15 },
+            { id: 'tg_bot', name: 'TELEGRAM BOT', group: 'output', val: 18 }
         ],
         links: [
-            // CORE → TODOS (Jarvis no centro ligado a tudo)
-            { source: 'core', target: 'n8n_engine' },
-            { source: 'core', target: 'guardian' },
-            { source: 'core', target: 'graphify' },
-            { source: 'core', target: 'python_bridge' },
-            { source: 'core', target: 'docker' },
-            { source: 'core', target: 'webhook' },
-            { source: 'core', target: 'schedule_trigger' },
-            { source: 'core', target: 'chat_trigger' },
-            { source: 'core', target: 'claude_llm' },
-            { source: 'core', target: 'claude_code' },
-            { source: 'core', target: 'openrouter' },
-            { source: 'core', target: 'vector_store' },
-            { source: 'core', target: 'memory_buffer' },
-            { source: 'core', target: 'telegram_bot' },
-            { source: 'core', target: 'http_request' },
-            { source: 'core', target: 'file_system' },
-            { source: 'core', target: 'log_output' },
-            { source: 'core', target: 'meta_ads' },
-            { source: 'core', target: 'insta_qa' },
-            { source: 'core', target: 'omnichat' },
-            { source: 'core', target: 'ebook' },
-            { source: 'core', target: 'health_vps' },
-
-            // Conexões secundárias entre serviços
-            { source: 'guardian',      target: 'n8n_engine' },
-            { source: 'guardian',      target: 'docker' },
-            { source: 'python_bridge', target: 'n8n_engine' },
-            { source: 'graphify',     target: 'vector_store' },
-            { source: 'n8n_engine',    target: 'webhook' },
-            { source: 'n8n_engine',    target: 'schedule_trigger' },
-            { source: 'n8n_engine',    target: 'chat_trigger' },
-            { source: 'n8n_engine',    target: 'meta_ads' },
-            { source: 'n8n_engine',    target: 'insta_qa' },
-            { source: 'n8n_engine',    target: 'omnichat' },
-            { source: 'n8n_engine',    target: 'ebook' },
-            { source: 'n8n_engine',    target: 'health_vps' },
-            { source: 'webhook',       target: 'claude_llm' },
-            { source: 'chat_trigger',  target: 'claude_llm' },
-            { source: 'claude_llm',    target: 'openrouter' },
-            { source: 'claude_llm',    target: 'vector_store' },
-            { source: 'claude_llm',    target: 'memory_buffer' },
-            { source: 'claude_llm',    target: 'telegram_bot' },
-            { source: 'claude_llm',    target: 'http_request' },
-            { source: 'claude_llm',    target: 'file_system' },
-            { source: 'claude_code',   target: 'docker' },
-            { source: 'claude_code',   target: 'file_system' },
-            { source: 'http_request',  target: 'log_output' },
-            { source: 'telegram_bot',  target: 'log_output' },
-            { source: 'file_system',   target: 'log_output' }
-        ]stem',   target: 'log_output' }
+            { source: 'core', target: 'claude_code' }, { source: 'core', target: 'claude_sonnet' }, { source: 'core', target: 'master' },
+            { source: 'core', target: 'n8n' }, { source: 'core', target: 'bridge' }, { source: 'core', target: 'docker' },
+            { source: 'core', target: 'guardian' }, { source: 'n8n', target: 'meta' }, { source: 'n8n', target: 'ebook' },
+            { source: 'n8n', target: 'insta' }, { source: 'n8n', target: 'omni' }, { source: 'n8n', target: 'health' },
+            { source: 'n8n', target: 'webhook' }, { source: 'n8n', target: 'schedule' }, { source: 'claude_code', target: 'file' },
+            { source: 'claude_code', target: 'docker' }, { source: 'master', target: 'tg_bot' }, { source: 'bridge', target: 'n8n' }
         ]
     };
 
-    // Atualizar stats
-    document.getElementById('stat-nodes').textContent = graphData.nodes.length;
-    document.getElementById('stat-links').textContent = graphData.links.length;
+    document.getElementById('node-count').textContent = graphData.nodes.length;
 
-    // ============================
-    // INICIALIZAR GRAFO 3D
-    // ============================
-    try {
-        if (typeof ForceGraph3D === 'undefined') {
-            throw new Error('Biblioteca 3d-force-graph não carregou. Verifique sua conexão com internet.');
-        }
-
-        var container = document.getElementById('graph-container');
-
-        var Graph = ForceGraph3D()(container)
-            .graphData(graphData)
-            .backgroundColor('rgba(0,0,0,0)')
-            .showNavInfo(false)
-            .nodeRelSize(4)
-            .nodeVal(function(n) { return n.val; })
-            .nodeColor(function(n) { return COLORS[n.group] || '#ffffff'; })
-            .nodeOpacity(0.9)
-            .nodeLabel(function(n) { return n.name + ' — ' + n.desc; })
-            .d3AlphaDecay(0.01)
-            .d3VelocityDecay(0.3)
-            .linkColor(function(link) {
-                var src = (typeof link.source === 'object') ? link.source : graphData.nodes.find(function(n) { return n.id === link.source; });
-                if (src && src.id === 'core') return 'rgba(0,229,255,0.6)';
-                return src ? (COLORS[src.group] || 'rgba(0,229,255,0.5)') : 'rgba(0,229,255,0.5)';
-            })
-            .linkWidth(1.2)
-            .linkOpacity(0.7)
-            .linkDirectionalParticles(3)
-            .linkDirectionalParticleWidth(1.5)
-            .linkDirectionalParticleSpeed(0.004)
-            .linkDirectionalParticleColor(function(link) {
-                var src = (typeof link.source === 'object') ? link.source : graphData.nodes.find(function(n) { return n.id === link.source; });
-                return src ? COLORS[src.group] || '#00e5ff' : '#00e5ff';
-            })
-            .onNodeHover(function(node) {
-                container.style.cursor = node ? 'pointer' : 'default';
-                var panel = document.getElementById('node-info');
-                if (node) {
-                    document.getElementById('ni-name').textContent = node.name;
-                    document.getElementById('ni-type').textContent = (node.group || '').toUpperCase() + ' — ' + (node.desc || '');
-                    var conns = graphData.links.filter(function(l) {
-                        var sid = (typeof l.source === 'object') ? l.source.id : l.source;
-                        var tid = (typeof l.target === 'object') ? l.target.id : l.target;
-                        return sid === node.id || tid === node.id;
-                    }).length;
-                    document.getElementById('ni-conn').innerHTML = 'Conexões: <span>' + conns + '</span>';
-                    panel.classList.add('visible');
-                } else {
-                    panel.classList.remove('visible');
-                }
-            })
-            .onNodeClick(function(node) {
-                var distance = 60;
-                var distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
-                Graph.cameraPosition(
-                    { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                    node,
-                    1500
-                );
-            });
-
-        // Labels 3D com SpriteText — BEM VISÍVEIS
-        if (typeof SpriteText !== 'undefined') {
-            Graph.nodeThreeObjectExtend(true)
-                .nodeThreeObject(function(node) {
-                    var sprite = new SpriteText(node.name);
-                    sprite.color = COLORS[node.group] || '#00e5ff';
-                    sprite.textHeight = node.group === 'core' ? 8 : 5;
-                    sprite.fontWeight = 'bold';
-                    sprite.backgroundColor = 'rgba(0, 5, 15, 0.75)';
-                    sprite.padding = 4;
-                    sprite.borderRadius = 6;
-                    sprite.borderWidth = 0.5;
-                    sprite.borderColor = COLORS[node.group] || '#00e5ff';
-                    return sprite;
-                });
-        }
-
-        // FORÇAS ESTILO SISTEMA SOLAR — espalhar nós ao redor do Core
-        Graph.d3Force('charge').strength(-300);
-        Graph.d3Force('link').distance(120);
-
-        // Esconder loading após renderizar
-        setTimeout(function() {
-            var loadEl = document.getElementById('loading');
-            loadEl.classList.add('hide');
-            setTimeout(function() { loadEl.style.display = 'none'; }, 800);
-        }, 2500);
-
-        // Rotação automática da câmera
-        var camAngle = 0;
-        var autoRotate = true;
-
-        container.addEventListener('mousedown', function() { autoRotate = false; });
-        container.addEventListener('mouseup', function() {
-            setTimeout(function() { autoRotate = true; }, 4000);
-        });
-        container.addEventListener('touchstart', function() { autoRotate = false; });
-        container.addEventListener('touchend', function() {
-            setTimeout(function() { autoRotate = true; }, 4000);
-        });
-
-        (function rotateCam() {
-            if (autoRotate) {
-                camAngle += 0.0015;
-                var dist = 320;
-                Graph.cameraPosition({
-                    x: dist * Math.sin(camAngle),
-                    z: dist * Math.cos(camAngle),
-                    y: 30 + Math.sin(camAngle * 0.4) * 25
-                });
+    const Graph = ForceGraph3D()(document.getElementById('graph-container'))
+        .graphData(graphData)
+        .backgroundColor('#000000')
+        .showNavInfo(false)
+        .nodeColor(n => COLORS[n.group])
+        .linkColor(() => 'rgba(0,229,255,0.4)')
+        .linkDirectionalParticles(3)
+        .linkDirectionalParticleSpeed(0.005)
+        .nodeThreeObject(node => {
+            const group = new THREE.Group();
+            if (node.id.includes('claude')) {
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.TextureLoader().load(claudeLogo), color: COLORS.ai }));
+                sprite.scale.set(25, 25, 1); group.add(sprite);
+            } else {
+                group.add(new THREE.Mesh(new THREE.SphereGeometry(node.val/4.5), new THREE.MeshLambertMaterial({ color: COLORS[node.group], transparent: true, opacity: 0.85 })));
             }
-            requestAnimationFrame(rotateCam);
-        })();
-
-        // Responsividade
-        window.addEventListener('resize', function() {
-            Graph.width(window.innerWidth);
-            Graph.height(window.innerHeight);
+            const label = new SpriteText(node.name); 
+            label.color = COLORS[node.group]; 
+            label.textHeight = 7; 
+            label.position.y = -15; 
+            label.backgroundColor = 'rgba(0,10,20,0.85)'; 
+            label.padding = 3; 
+            label.borderRadius = 4;
+            label.fontWeight = 'bold';
+            group.add(label); return group;
         });
 
-        console.log('[JARVIS] Mapa 3D inicializado com sucesso! Nodes:', graphData.nodes.length, '| Links:', graphData.links.length);
+    Graph.d3Force('charge').strength(-550);
+    Graph.d3Force('link').distance(150);
 
-    } catch (err) {
-        showError(err.message);
-        console.error(err);
-    }
+    let angle = 0;
+    (function rotate() { angle += 0.0015; Graph.cameraPosition({ x: 450 * Math.sin(angle), z: 450 * Math.cos(angle), y: 150 * Math.cos(angle) }); requestAnimationFrame(rotate); })();
     </script>
 </body>
 </html>
