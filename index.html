@@ -117,13 +117,33 @@
             label.borderRadius = 4;
             label.fontWeight = 'bold';
             group.add(label); return group;
+        })
+        .onNodeClick(node => {
+            isRotating = false; // Pausa a rotação para focar no agente
+            const distance = 80;
+            const distRatio = 1 + distance/Math.hypot(node.x || 1, node.y || 1, node.z || 1);
+            Graph.cameraPosition(
+                { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+                node, // LookAt
+                2000  // Duração da transição em ms
+            );
+        })
+        .onBackgroundClick(() => {
+            isRotating = true; // Retoma rotação ao clicar no vácuo
         });
 
     Graph.d3Force('charge').strength(-550);
     Graph.d3Force('link').distance(150);
 
     let angle = 0;
-    (function rotate() { angle += 0.0015; Graph.cameraPosition({ x: 450 * Math.sin(angle), z: 450 * Math.cos(angle), y: 150 * Math.cos(angle) }); requestAnimationFrame(rotate); })();
+    let isRotating = true;
+    (function rotate() { 
+        if (isRotating) {
+            angle += 0.0015; 
+            Graph.cameraPosition({ x: 450 * Math.sin(angle), z: 450 * Math.cos(angle), y: 150 * Math.cos(angle) }); 
+        }
+        requestAnimationFrame(rotate); 
+    })();
     </script>
 </body>
 </html>
